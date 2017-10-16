@@ -31,10 +31,16 @@
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wwS-Fl-AUN">
                                 <rect key="frame" x="327" y="686" width="67" height="30"/>
                                 <state key="normal" title=" nastepny"/>
+                                <connections>
+                                    <action selector="nextClicked:" destination="BYZ-38-t0r" eventType="touchUpInside" id="yf6-ft-UM2"/>
+                                </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="eV9-wO-7wt">
                                 <rect key="frame" x="20" y="686" width="69" height="30"/>
                                 <state key="normal" title="poprzedni"/>
+                                <connections>
+                                    <action selector="previousClicked:" destination="BYZ-38-t0r" eventType="touchUpInside" id="x4X-1Q-IZ1"/>
+                                </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="HdT-pN-Xrv">
                                 <rect key="frame" x="307" y="648" width="87" height="30"/>
@@ -159,7 +165,6 @@
                         </constraints>
                     </view>
                     <connections>
-                        <outlet property="foobar" destination="MRv-Az-WrT" id="t5U-U2-gl5"/>
                         <outlet property="gatunek" destination="dpg-Sr-ndM" id="ztq-v4-XmD"/>
                         <outlet property="liczbaSciezek" destination="Odb-zC-5UT" id="67a-JZ-AvV"/>
                         <outlet property="recordTitle" destination="MRv-Az-WrT" id="ZL3-vB-Fxd"/>
