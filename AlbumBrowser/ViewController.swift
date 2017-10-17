@@ -38,55 +38,93 @@ class ViewController: UIViewController {
     
     var albums = [Album]()
     var currentAlbumIdx: Int = 0
+    var totalNoOfAlbums: Int = 0
    
-    
     @IBOutlet weak var recordTitle: UILabel!
 
     @IBOutlet weak var wykonawca: UITextField!
     @IBOutlet weak var tytul: UITextField!
     @IBOutlet weak var gatunek: UITextField!
     @IBOutlet weak var rokWydania: UITextField!
-    @IBOutlet weak var liczbaSciezek: UITextField!
-
+    @IBOutlet weak var liczbaSciezek: UITextField! 
+    
+    @IBOutlet weak var previousButton: UIButton!
+    @IBOutlet weak var nextButton: UIButton!
+    @IBOutlet weak var saveButton: UIButton!
+    @IBOutlet weak var removeButton: UIButton!
+    @IBOutlet weak var newRecordButton: UIButton!
+    
+    var isLast: Bool {
+        get {
+            return (currentAlbumIdx == totalNoOfAlbums)
+        }
+    }
+    var isFirst: Bool {
+        get {
+            return (currentAlbumIdx == 0)
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         requestInitialData()
-        // Do any additional setup after loading the view, typically from a nib.
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    }
+    
+    @IBAction func newRecordClicked(_ sender: Any) {
+        self.currentAlbumIdx = self.totalNoOfAlbums
+        updateView()
     }
 
     private func updateView() {
-        let currentAlbum = albums[currentAlbumIdx]
-        self.wykonawca.text = currentAlbum.artist
-        self.tytul.text = currentAlbum.album
-        self.gatunek.text = currentAlbum.genre
-        self.rokWydania.text = String(currentAlbum.year)
-        self.liczbaSciezek.text = String(currentAlbum.tracks)
+        self.previousButton.isEnabled = !isFirst
+        self.nextButton.isEnabled = !isLast
+        self.newRecordButton.isEnabled = !isLast
+        self.removeButton.isEnabled = !isLast
+        self.saveButton.isEnabled = isLast
         
-        self.recordTitle.text = currentAlbum.album
+        if isLast {
+            self.recordTitle.text = "Nowy Rekord"
+            
+            self.wykonawca.text = ""
+            self.tytul.text = ""
+            self.gatunek.text = ""
+            self.rokWydania.text = ""
+            self.liczbaSciezek.text = ""
+        } else {
+            self.recordTitle.text = "Rekord \(currentAlbumIdx + 1) z \(totalNoOfAlbums)"
+            
+            let currentAlbum = albums[currentAlbumIdx]
+            self.wykonawca.text = currentAlbum.artist
+            self.tytul.text = currentAlbum.album
+            self.gatunek.text = currentAlbum.genre
+            self.rokWydania.text = String(currentAlbum.year)
+            self.liczbaSciezek.text = String(currentAlbum.tracks)
+            
+        }
+        
     }
     
     private func requestInitialData() {
         let session = URLSession.shared
         let url = URL.init(string: "https://isebi.net/albums.php")
         
-        session.dataTask(with: url!, completionHandler: {
-            (maybeData: Data?, _, _) in
-            
-        
+        session.dataTask(with: url!, completionHandler: { (maybeData: Data?, _, _) in
             if let data = maybeData,
-                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] { //lista tablic asocjacyjnych
-                    for album in json! {
+                let maybeJson = try? JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]],
+                let json = maybeJson {
+                    for album in json {
                         if let album = Album(json: album) {
                             self.albums.append(album)
                             print("Adding album \(album)")
                         }
                     }
+                    self.totalNoOfAlbums = self.albums.count
+            } else {
+                print("Couldn't deserialize \(maybeData)")
             }
             
             
@@ -97,16 +135,43 @@ class ViewController: UIViewController {
         
     }
     @IBAction func nextClicked(_ sender: Any) {
-        currentAlbumIdx = (currentAlbumIdx + 1) % albums.count
+        currentAlbumIdx = (currentAlbumIdx + 1)
         updateView()
     }
     
     @IBAction func previousClicked(_ sender: Any) {
-        currentAlbumIdx = (currentAlbumIdx - 1) % albums.count
+        currentAlbumIdx = (currentAlbumIdx - 1)
         updateView()
     }
     
+    @IBAction func removeClicked(_ sender: Any) {
+        albums.remove(at: currentAlbumIdx)
+        totalNoOfAlbums -= 1
+        updateView()
+    }
     
+    @IBAction func addClicked(_ sender: Any) {
+        let newAlbum = Album(
+            artist: wykonawca.text ?? "",
+            album: tytul.text ?? "",
+            genre: gatunek.text ?? "",
+            year: Int(rokWydania.text ?? "") ?? 0,
+            tracks: Int(liczbaSciezek.text ?? "") ?? 0
+        )
+        if (isLast) {
+            albums.append(newAlbum)
+            self.totalNoOfAlbums += 1
+        } else {
+            albums[currentAlbumIdx] = newAlbum
+        }
+        updateView()
+    }
+  
+    @IBAction func editingBegun(_ sender: UITextField) {
+        self.saveButton.isEnabled = true
+    }
 
+    
+   
 }
 
