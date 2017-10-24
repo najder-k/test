@@ -112,12 +112,16 @@ class ViewController: UIViewController {
         let session = URLSession.shared
         let url = URL.init(string: "https://isebi.net/albums.php")
         
-        session.dataTask(with: url!, completionHandler: { (maybeData: Data?, _, _) in
+        session.dataTask(with: url!, completionHandler: { (maybeData: Data?, _, error) in
+            if let error = error {
+                print("An error occured during the request: \(error.localizedDescription)")
+            }
+            
             if let data = maybeData,
                 let maybeJson = try? JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]],
-                let json = maybeJson {
-                    for album in json {
-                        if let album = Album(json: album) {
+                let jsonList = maybeJson {
+                    for json in jsonList {
+                        if let album = Album(json: json) {
                             self.albums.append(album)
                             print("Adding album \(album)")
                         }
@@ -127,7 +131,7 @@ class ViewController: UIViewController {
                 print("Couldn't deserialize \(maybeData)")
             }
             
-            
+
             DispatchQueue.main.async {
                 self.updateView()
             }
