@@ -8,30 +8,59 @@
 
 import UIKit
 
-struct Album {
+class Album: NSObject, NSCoding {
     let artist: String
     let album: String
     let genre: String
     let year: Int
     let tracks: Int
-}
-extension Album {
-    init?(json: [String: Any]) {
-        guard let artist = json["artist"] as? String,
-            let album = json["album"] as? String,
-            let genre = json["genre"] as? String,
-            let year = json["year"] as? Int,
-            let tracks = json["tracks"] as? Int
-        else {
-            return nil
-        }
-        
+    
+    init(_ artist: String, _ album: String, _ genre: String, _ year: Int, _ tracks: Int) {
         self.artist = artist
         self.album = album
         self.genre = genre
         self.year = year
         self.tracks = tracks
     }
+    
+    required convenience init?(json: [String: Any]) {
+        guard let artist = json["artist"] as? String,
+            let album = json["album"] as? String,
+            let genre = json["genre"] as? String,
+            let year = json["year"] as? Int,
+            let tracks = json["tracks"] as? Int
+            else {
+                return nil
+        }
+        
+        self.init(artist, album, genre, year, tracks)
+    }
+    
+    required convenience init?(coder decoder: NSCoder) {
+        guard let artist = decoder.decodeObject(forKey: "artist") as? String,
+            let album = decoder.decodeObject(forKey: "album") as? String,
+            let genre = decoder.decodeObject(forKey: "genre") as? String
+            else {
+                return nil
+        }
+        let year = decoder.decodeInteger(forKey: "year")
+        let tracks = decoder.decodeInteger(forKey: "tracks")
+        
+        self.init(artist, album, genre, year, tracks)
+    }
+    
+    func encode(with aCoder: NSCoder) {
+        aCoder.encode(self.artist, forKey: "artist")
+        aCoder.encode(self.album, forKey: "album")
+        aCoder.encode(self.genre, forKey: "genre")
+        aCoder.encode(self.year, forKey: "year")
+        aCoder.encode(self.tracks, forKey: "tracks")
+    }
+    
+    override public var description: String {
+        return "Album(\(artist), \(album), \(genre), \(year), \(tracks))"
+    }
+    
 }
 
 class ViewController: UIViewController {
@@ -39,6 +68,11 @@ class ViewController: UIViewController {
     var albums = [Album]()
     var currentAlbumIdx: Int = 0
     var totalNoOfAlbums: Int = 0
+    
+    var filePath : String {
+        let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        return path + "/albums"
+    }
    
     @IBOutlet weak var recordTitle: UILabel!
 
@@ -67,7 +101,28 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        requestInitialData()
+        loadData()
+    }
+    
+    private func loadData() {
+        if let cachedAlbums = NSKeyedUnarchiver.unarchiveObject(withFile: filePath) as? [Album] {
+            print("Loading cached albums")
+            print(cachedAlbums)
+            albums = cachedAlbums
+            totalNoOfAlbums = albums.count
+            updateView()
+        } else {
+            print("Requesting data from server")
+            requestInitialData()
+        }
+    }
+    
+    private func saveData() {
+        if NSKeyedArchiver.archiveRootObject(albums, toFile: filePath) {
+            print("Successfully saved album data");
+        } else {
+            print("Error in saving albums");
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -123,7 +178,7 @@ class ViewController: UIViewController {
                     for json in jsonList {
                         if let album = Album(json: json) {
                             self.albums.append(album)
-                            print("Adding album \(album)")
+                            print("Adding album \(album.album)")
                         }
                     }
                     self.totalNoOfAlbums = self.albums.count
@@ -133,10 +188,10 @@ class ViewController: UIViewController {
             
 
             DispatchQueue.main.async {
+                self.saveData()
                 self.updateView()
             }
         }).resume()
-        
     }
     @IBAction func nextClicked(_ sender: Any) {
         currentAlbumIdx = (currentAlbumIdx + 1)
@@ -156,11 +211,11 @@ class ViewController: UIViewController {
     
     @IBAction func addClicked(_ sender: Any) {
         let newAlbum = Album(
-            artist: wykonawca.text ?? "",
-            album: tytul.text ?? "",
-            genre: gatunek.text ?? "",
-            year: Int(rokWydania.text ?? "") ?? 0,
-            tracks: Int(liczbaSciezek.text ?? "") ?? 0
+            wykonawca.text ?? "",
+            tytul.text ?? "",
+            gatunek.text ?? "",
+            Int(rokWydania.text ?? "") ?? 0,
+            Int(liczbaSciezek.text ?? "") ?? 0
         )
         if (isLast) {
             albums.append(newAlbum)
@@ -168,6 +223,8 @@ class ViewController: UIViewController {
         } else {
             albums[currentAlbumIdx] = newAlbum
         }
+        
+        saveData()
         updateView()
     }
   
